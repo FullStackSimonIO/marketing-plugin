@@ -4,7 +4,7 @@
 
 Verwandle dein Payload CMS in ein vollwertiges Marketing-Cockpit! Conversion-getrieben, messbar und DSGVO-konform.
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/FullStackSimonIO/marketing-plugin)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/FullStackSimonIO/marketing-plugin)
 [![Payload](https://img.shields.io/badge/Payload-3.x-green.svg)](https://payloadcms.com)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 
@@ -79,13 +79,37 @@ export default buildConfig({
 })
 ```
 
-### 2. TypeScript-Typen generieren
+### 2. Frontend-Komponenten einbinden
+
+**Wichtig:** Binde die PopupProvider und CTAProvider Komponenten in dein Frontend-Layout ein:
+
+```tsx
+// app/(frontend)/layout.tsx
+'use client'
+
+import { PopupProvider, CTAProvider } from '@fullstack-factory/payload-marketing-plugin/components'
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        {/* Marketing Components am Ende einfügen */}
+        <PopupProvider />
+        <CTAProvider />
+      </body>
+    </html>
+  )
+}
+```
+
+### 3. TypeScript-Typen generieren
 
 ```bash
 pnpm payload generate:types
 ```
 
-### 3. Migrationen ausführen
+### 4. Migrationen ausführen
 
 ```bash
 # Development
@@ -95,7 +119,7 @@ pnpm payload migrate
 pnpm payload migrate:prod
 ```
 
-### 4. Admin Panel öffnen
+### 5. Admin Panel öffnen
 
 ```
 http://localhost:3000/admin
@@ -147,6 +171,24 @@ export default function RootLayout({ children }) {
 }
 ```
 
+**Verfügbare Trigger:**
+- `immediate`: Zeigt Popup sofort beim Laden an
+- `delay`: Nach X Sekunden Wartezeit
+- `scroll`: Bei X% Scroll-Tiefe (z.B. 50%)
+- `exit-intent`: Beim Verlassen der Seite (Mouse verlässt Viewport)
+- `idle`: Nach X Sekunden Inaktivität
+
+**Verfügbare Themes:**
+- `default`: Klassisch weiß mit Schatten
+- `minimal`: Minimalistisch und clean
+- `modern`: Moderne Gradients und Farben
+- `bold`: Dunkler Hintergrund, starker Kontrast
+
+**Positionen:**
+- `center`: Zentral im Viewport
+- `top-left`, `top-right`: Oben links/rechts
+- `bottom-left`, `bottom-right`: Unten links/rechts
+
 ---
 
 ### 2. 🎨 CTA Widgets
@@ -169,6 +211,23 @@ export default function RootLayout({ children }) {
 2. Widget-Typ wählen
 3. Text, Link & Icon konfigurieren
 4. Auf gewünschten Seiten aktivieren
+
+**Im Frontend:**
+```tsx
+// app/(frontend)/layout.tsx
+import { CTAProvider } from '@fullstack-factory/payload-marketing-plugin/components'
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        <CTAProvider />
+      </body>
+    </html>
+  )
+}
+```
 
 **Beispiel: WhatsApp-Button**
 ```
@@ -226,15 +285,20 @@ Leads können Team-Mitgliedern zugewiesen werden.
 
 #### Automatisches Tracking im Frontend:
 
+Die PopupProvider und CTAProvider Komponenten senden automatisch Tracking-Events. Du kannst auch manuell Events tracken:
+
 ```typescript
-// Tracking-Event senden
-await fetch('/api/marketing/event', {
+// Manuelles Event-Tracking
+await fetch('/api/mk-events', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    eventType: 'popup_converted',
-    elementId: 'popup-123',
+    eventType: 'custom_event',
+    elementId: 'custom-element-123',
     page: window.location.href,
+    metadata: {
+      customField: 'customValue'
+    }
   }),
 })
 ```
@@ -286,12 +350,30 @@ payloadMarketingPlugin({
 
 ## 🔧 Frontend-Integration
 
-### 1. Popup-Provider einbinden
+### Beide Komponenten einbinden (Empfohlen)
 
 ```tsx
 // app/(frontend)/layout.tsx
 'use client'
 
+import { PopupProvider, CTAProvider } from '@fullstack-factory/payload-marketing-plugin/components'
+
+export default function Layout({ children }) {
+  return (
+    <>
+      {children}
+      {/* Beide Marketing-Provider am Ende einfügen */}
+      <PopupProvider />
+      <CTAProvider />
+    </>
+  )
+}
+```
+
+### Einzelne Komponenten
+
+**Nur Popups:**
+```tsx
 import { PopupProvider } from '@fullstack-factory/payload-marketing-plugin/components'
 
 export default function Layout({ children }) {
@@ -304,12 +386,8 @@ export default function Layout({ children }) {
 }
 ```
 
-### 2. CTA-Provider einbinden
-
+**Nur CTA Widgets:**
 ```tsx
-// app/(frontend)/layout.tsx
-'use client'
-
 import { CTAProvider } from '@fullstack-factory/payload-marketing-plugin/components'
 
 export default function Layout({ children }) {
@@ -318,24 +396,6 @@ export default function Layout({ children }) {
       {children}
       <CTAProvider />
     </>
-  )
-}
-```
-
-### 3. Tracking-Script einbinden
-
-```tsx
-// app/(frontend)/layout.tsx
-import { MarketingScripts } from '@fullstack-factory/payload-marketing-plugin/components'
-
-export default function Layout({ children }) {
-  return (
-    <html>
-      <head>
-        <MarketingScripts />
-      </head>
-      <body>{children}</body>
-    </html>
   )
 }
 ```
@@ -442,7 +502,7 @@ Das Plugin bietet 4 vorgefertigte Themes:
 
 ```tsx
 // Erst Tracking starten nach Consent
-import { startMarketing Tracking } from '@fullstack-factory/payload-marketing-plugin/utils'
+import { startMarketingTracking } from '@fullstack-factory/payload-marketing-plugin/utils'
 
 function CookieBanner() {
   const handleAccept = () => {
@@ -500,84 +560,79 @@ utm_campaign: summer-sale-2024, launch-week
 
 ---
 
-## 🔍 Troubleshooting
+## 🔄 Updates & Changelog
 
-### Popups erscheinen nicht?
+### Version 1.1.0 (Aktuell)
 
-1. ✅ **Popup ist aktiv?** Check in Admin
-2. ✅ **PopupProvider eingebunden?** In `layout.tsx`
-3. ✅ **Cookie-Check:** Lösche Cookies und teste erneut
-4. ✅ **URL-Filter:** Prüfe "Auf welchen Seiten anzeigen?"
+**✨ Neue Features:**
+- Frontend-Komponenten hinzugefügt: `PopupProvider` und `CTAProvider`
+- Vollständiges Popup-System mit allen 5 Trigger-Typen
+- 4 CTA-Widget-Typen implementiert
+- Automatisches Event-Tracking integriert
+- Cookie- und Session-Management
 
-### Tracking funktioniert nicht?
+**🛠️ Verbesserungen:**
+- Bessere TypeScript-Typen
+- Optimierte Performance
+- Erweiterte Dokumentation
 
-1. ✅ **Tracking-IDs korrekt?** GA4/GTM-ID prüfen
-2. ✅ **DSGVO-Modus:** Cookie-Consent erforderlich?
-3. ✅ **Browser-DevTools:** Console auf Fehler prüfen
+### Version 1.0.0
 
-### Leads werden nicht erfasst?
-
-1. ✅ **API-Route erreichbar?** `/api/marketing/lead`
-2. ✅ **CORS-Probleme?** Bei externen Formularen
-3. ✅ **Webhook-URL:** Erreichbar? Secret korrekt?
-
----
-
-## 📚 Beispiel-Use-Cases
-
-### 1. Immobilienmakler
-
-**Setup**:
-- Exit-Intent Popup: "Kostenlose Bewertung Ihrer Immobilie"
-- Sticky Bar: "Nur noch 3 Objekte verfügbar!"
-- UTM-Tracking für Google Ads Kampagnen
-
-### 2. SaaS-Startup
-
-**Setup**:
-- Time-Delay Popup nach 30s: "14 Tage kostenlos testen"
-- Floating Button: "Live-Demo buchen"
-- A/B-Test verschiedener CTA-Texte
-
-### 3. E-Commerce
-
-**Setup**:
-- Scroll-Trigger bei 70%: "10% Rabatt für Newsletter"
-- Corner-Box: "Kostenloser Versand ab 50€"
-- Countdown-Timer: "Aktion endet in 2:14:59"
+- Initiales Release
+- Backend-Collections (Popups, CTAs, Leads, Events)
+- Admin-Interface
+- REST API Endpoints
 
 ---
 
-## 🤝 Support & Community
+## 🐛 Troubleshooting
 
-- 📧 **E-Mail**: support@fullstack-factory.de
-- 🐛 **GitHub Issues**: [Marketing-Plugin Issues](https://github.com/FullStackSimonIO/marketing-plugin/issues)
-- 📖 **Dokumentation**: [Ausführliche Docs](https://github.com/FullStackSimonIO/marketing-plugin/wiki)
+### Popups erscheinen nicht
+
+**Checkliste:**
+1. ✅ `PopupProvider` in Layout eingebunden?
+2. ✅ Popup im Admin als "Aktiv" markiert?
+3. ✅ Richtiger Trigger konfiguriert?
+4. ✅ Cookie-Einstellungen überprüfen (ggf. Cookies löschen)
+5. ✅ Browser-Console auf Fehler prüfen
+
+### CTAs werden nicht angezeigt
+
+**Checkliste:**
+1. ✅ `CTAProvider` in Layout eingebunden?
+2. ✅ CTA als "Aktiv" markiert?
+3. ✅ Seiten-Filter korrekt konfiguriert?
+4. ✅ Delay-Einstellung überprüfen
+
+### TypeScript-Fehler
+
+**Typen neu generieren:**
+```bash
+pnpm payload generate:types
+```
+
+---
+
+## 📚 Weitere Ressourcen
+
+- [Payload CMS Dokumentation](https://payloadcms.com/docs)
+- [Plugin GitHub Repository](https://github.com/FullStackSimonIO/marketing-plugin)
+- [Issue Tracker](https://github.com/FullStackSimonIO/marketing-plugin/issues)
+
+---
+
+## 🤝 Support & Kontakt
+
+Bei Fragen oder Problemen:
+- GitHub Issues: [https://github.com/FullStackSimonIO/marketing-plugin/issues](https://github.com/FullStackSimonIO/marketing-plugin/issues)
+- E-Mail: support@fullstack-factory.de
 
 ---
 
 ## 📝 Lizenz
 
-MIT © Fullstack Factory
+MIT License - siehe [LICENSE](LICENSE) Datei für Details.
 
 ---
 
-## 🚀 Roadmap
-
-### v1.1 (Coming Soon)
-- [ ] A/B-Testing Dashboard
-- [ ] Heatmap-Integration (Hotjar, Clarity)
-- [ ] Erweiterte Landing-Page-Builder
-- [ ] Multi-Step-Formulare
-
-### v1.2 (Planned)
-- [ ] KI-gestützte Conversion-Optimierung
-- [ ] Automatische E-Mail-Sequenzen
-- [ ] CRM-Integrationen (HubSpot, Pipedrive)
-
----
-
-**Viel Erfolg mit deinem Marketing! 🚀**
-
-Erstellt mit ❤️ von [Fullstack Factory](https://fullstack-factory.de)
-
+**Made with ❤️ by [Fullstack Factory](https://github.com/FullStackSimonIO)**
