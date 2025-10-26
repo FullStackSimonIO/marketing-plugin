@@ -1,9 +1,13 @@
 {
   "name": "@fullstack-factory/payload-marketing-plugin",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Umfassendes Marketing-Plugin für Payload CMS 3.x - Popups, CTAs, Landing Pages, Analytics & Tracking",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./components": "./dist/client/components/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -43,4 +47,3 @@
     "react-dom": "^19.2.0"
   }
 }
-
